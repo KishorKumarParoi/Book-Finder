@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import './App.css'
 import bookLink from './assets/book.png'
 import logo from './assets/lws-logo-en.svg'
@@ -17,7 +18,45 @@ function Footer() {
   )
 }
 
-function SearchBox() {
+function SearchBox({ onSearch }) {
+
+  const [text, setText] = useState('');
+
+  function handleSearchData(e) {
+    console.log(e.target.value);
+  }
+
+  const updateDebounce = debounce(text => {
+    console.log("BounceText : ", text);
+  }, 5000);
+
+  function debounce(cb, delay) {
+    let timeoutId;
+    return (...args) => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        cb(...args);
+      }, delay);
+    }
+  }
+
+  const updateThrottle = throttle(text => {
+    console.log("throttleText :", text);
+  }, 5000);
+
+  function throttle(cb, delay) {
+    let flag = false;
+    return (...args) => {
+      if (!flag) {
+        cb(...args);
+        flag = true;
+        setTimeout(() => {
+          flag = false;
+        }, delay);
+      }
+    }
+  }
+
   return (
     <>
       <form>
@@ -26,16 +65,24 @@ function SearchBox() {
             className="relative w-full overflow-hidden rounded-lg border-2 border-[#1C4336] text-[#1C4336] md:min-w-[380px] lg:min-w-[440px]">
             <input type="search" id="search-dropdown"
               className="z-20 block w-full bg-white px-4 py-2.5 pr-10 text-[#1C4336] placeholder:text-[#1C4336] focus:outline-none"
-              placeholder="Search Book" required />
+              placeholder="Search Book" value={text} onChange={(e) => {
+                setText(e.target.value);
+                console.log('Text :', text);
+                updateDebounce(text);
+                updateThrottle(text);
+              }} required />
             <div className="absolute right-0 top-0 flex h-full items-center">
               <button type="submit"
-                className="mr-1.5 flex items-center space-x-1.5 rounded-md rounded-e-lg bg-[#1C4336] px-4 py-2.5 text-sm text-white">
+                className="mr-1.5 flex items-center space-x-1.5 rounded-md rounded-e-lg bg-[#1C4336] px-4 py-2.5 text-sm text-white" onClick={(e) => {
+                  e.preventDefault();
+                  onSearch(text);
+                }}>
                 <svg className="h-[14px] w-[14px]" aria-hidden="true"
                   xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
                   <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"
                     strokeWidth="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
                 </svg>
-                <span>Search</span>
+                <span >Search</span>
               </button>
             </div>
           </div>
@@ -172,6 +219,13 @@ function BookGrid() {
   )
 }
 function Main() {
+  const BookInformation = BookData;
+  console.log(BookInformation);
+
+  function handleSearch(text) {
+    console.log('got searchText', text);
+  }
+
   return (
     <>
       <main className="my-10 lg:my-14">
@@ -186,7 +240,7 @@ function Main() {
                 Trending Books of the Year
               </h2>
               {/* <!-- Search Box --> */}
-              <SearchBox />
+              <SearchBox onSearch={handleSearch} />
               {/* <!-- Search Box Ends --> */}
             </div>
             {/* <!-- sort - filter --> */}
