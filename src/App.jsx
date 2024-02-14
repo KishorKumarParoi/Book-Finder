@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import './App.css'
 import bookLink from './assets/book.png'
 import logo from './assets/lws-logo-en.svg'
@@ -17,6 +17,46 @@ function Footer() {
       </footer>
     </>
   )
+}
+
+function useDebounce(value, delay, func) {
+  // use useRef to store timeout Id
+  const timeOutId = useRef(null);
+
+  // update callback and delay each render
+  useEffect(() => {
+    clearTimeout(timeOutId.current);
+    timeOutId.current = setTimeout(() => {
+      func(value);
+    }, delay);
+  }, [value, delay, func]);
+
+  // cleanup function to clear the timeout on unmount
+  useEffect(() => () => clearTimeout(timeOutId.current), []);
+
+  // return the debounced value;
+  return value;
+}
+
+function useThrottle(func, delay) {
+  // use useRef to store the last execution time
+  const lastCallRef = useRef(0);
+
+  // update delay each render
+  useEffect(() => {
+    lastCallRef.current = 0;
+  }, [delay]);
+
+  // callback function for throttling
+  const throttledFunction = () => {
+    const now = Date.now();
+    if (now - lastCallRef.current >= delay) {
+      func();
+      lastCallRef.current = now;
+    }
+  };
+
+  return throttledFunction;
 }
 
 function SearchBox({ onSearch }) {
@@ -56,6 +96,13 @@ function SearchBox({ onSearch }) {
     throttleSave(e.target.value);
   }
 
+  const debouncedSearch = useDebounce(searchTerm, 5000, (term) => {
+    console.log('Debounced search term:', term);
+  })
+
+  // const throttleSearch = useThrottle(() => {
+  //   console.log('throttle search term:');
+  // }, 5000)
 
   return (
     <>
@@ -70,7 +117,7 @@ function SearchBox({ onSearch }) {
               <button type="submit"
                 className="mr-1.5 flex items-center space-x-1.5 rounded-md rounded-e-lg bg-[#1C4336] px-4 py-2.5 text-sm text-white" onClick={(e) => {
                   e.preventDefault();
-                  onSearch(searchTerm);
+                  onSearch(debouncedSearch);
                 }}>
                 <svg className="h-[14px] w-[14px]" aria-hidden="true"
                   xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
