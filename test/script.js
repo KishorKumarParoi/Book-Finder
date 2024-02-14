@@ -30,14 +30,12 @@ const updateThrottle = Throttle(text => {
 }, 5000);
 
 function Throttle(cb, delay) {
-    let flag = false;
+    let lastCall = 0;
     return (...args) => {
-        if (!flag) {
+        const now = Date.now();
+        if (now - lastCall >= delay) {
             cb(...args);
-            flag = true;
-            setTimeout(() => {
-                flag = false;
-            }, delay);
+            lastCall = now;
         }
     }
 }

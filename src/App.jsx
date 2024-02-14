@@ -1,4 +1,5 @@
-import { useState } from 'react'
+/* eslint-disable react-hooks/exhaustive-deps */
+import { useCallback, useState } from 'react'
 import './App.css'
 import bookLink from './assets/book.png'
 import logo from './assets/lws-logo-en.svg'
@@ -20,42 +21,41 @@ function Footer() {
 
 function SearchBox({ onSearch }) {
 
-  const [text, setText] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debounceTerm, setDebounceTerm] = useState('');
+  const [throttleTerm, setThrottleTerm] = useState('');
 
-  function handleSearchData(e) {
-    console.log(e.target.value);
-  }
-
-  const updateDebounce = debounce(text => {
-    console.log("BounceText : ", text);
-  }, 5000);
-
-  function debounce(cb, delay) {
-    let timeoutId;
+  const debounce = (func, delay) => {
+    let timeOutId;
     return (...args) => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => {
-        cb(...args);
+      clearTimeout(timeOutId);
+      timeOutId = setTimeout(() => {
+        func(...args);
       }, delay);
     }
   }
 
-  const updateThrottle = throttle(text => {
-    console.log("throttleText :", text);
-  }, 5000);
-
-  function throttle(cb, delay) {
-    let flag = false;
+  const throttle = (func, delay) => {
+    let lastCall = 0;
     return (...args) => {
-      if (!flag) {
-        cb(...args);
-        flag = true;
-        setTimeout(() => {
-          flag = false;
-        }, delay);
+      const now = Date.now();
+      if (now - lastCall >= delay) {
+        func(...args);
+        lastCall = now;
       }
     }
   }
+
+  const debounceSave = useCallback(debounce(nextValue => setDebounceTerm(nextValue), 5000), []);
+  const throttleSave = useCallback(throttle(nextValue => setThrottleTerm(nextValue), 5000), []);
+
+  function handleSearchChange(e) {
+    setSearchTerm(e.target.value);
+    // throttle(setThrottleTerm, 5000)(e.target.value);
+    debounceSave(e.target.value);
+    throttleSave(e.target.value);
+  }
+
 
   return (
     <>
@@ -65,17 +65,12 @@ function SearchBox({ onSearch }) {
             className="relative w-full overflow-hidden rounded-lg border-2 border-[#1C4336] text-[#1C4336] md:min-w-[380px] lg:min-w-[440px]">
             <input type="search" id="search-dropdown"
               className="z-20 block w-full bg-white px-4 py-2.5 pr-10 text-[#1C4336] placeholder:text-[#1C4336] focus:outline-none"
-              placeholder="Search Book" value={text} onChange={(e) => {
-                setText(e.target.value);
-                console.log('Text :', text);
-                updateDebounce(text);
-                updateThrottle(text);
-              }} required />
+              placeholder="Search Book" value={searchTerm} onChange={handleSearchChange} required />
             <div className="absolute right-0 top-0 flex h-full items-center">
               <button type="submit"
                 className="mr-1.5 flex items-center space-x-1.5 rounded-md rounded-e-lg bg-[#1C4336] px-4 py-2.5 text-sm text-white" onClick={(e) => {
                   e.preventDefault();
-                  onSearch(text);
+                  onSearch(searchTerm);
                 }}>
                 <svg className="h-[14px] w-[14px]" aria-hidden="true"
                   xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
@@ -85,6 +80,8 @@ function SearchBox({ onSearch }) {
                 <span >Search</span>
               </button>
             </div>
+            <p>Debounce : {debounceTerm}</p>
+            <p>Throttle : {throttleTerm}</p>
           </div>
         </div>
       </form>
@@ -223,7 +220,7 @@ function Main() {
   console.log(BookInformation);
 
   function handleSearch(text) {
-    console.log('got searchText', text);
+    console.log('got searchText -> ', text);
   }
 
   return (
