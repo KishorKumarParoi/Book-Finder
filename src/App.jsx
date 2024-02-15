@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import './App.css'
 import bookLink from './assets/book.png'
 import logo from './assets/lws-logo-en.svg'
@@ -19,7 +19,7 @@ function Footer() {
   )
 }
 
-function useDebounce(value, delay, func) {
+function useDebounce(func, delay, value) {
   // use useRef to store timeout Id
   const timeOutId = useRef(null);
 
@@ -29,10 +29,14 @@ function useDebounce(value, delay, func) {
     timeOutId.current = setTimeout(() => {
       func(value);
     }, delay);
-  }, [value, delay, func]);
+  }, [func, delay, value]);
 
   // cleanup function to clear the timeout on unmount
-  useEffect(() => () => clearTimeout(timeOutId.current), []);
+  useEffect(() => {
+    () => {
+      clearTimeout(timeOutId.current);
+    }
+  }, []);
 
   // return the debounced value;
   return value;
@@ -48,61 +52,70 @@ function useThrottle(func, delay) {
   }, [delay]);
 
   // callback function for throttling
-  const throttledFunction = () => {
+  const ThrottleFunction = () => {
     const now = Date.now();
     if (now - lastCallRef.current >= delay) {
       func();
       lastCallRef.current = now;
     }
-  };
+  }
 
-  return throttledFunction;
+  // return the throttled value
+  return ThrottleFunction;
 }
 
 function SearchBox({ onSearch }) {
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [debounceTerm, setDebounceTerm] = useState('');
-  const [throttleTerm, setThrottleTerm] = useState('');
+  // const [debounceTerm, setDebounceTerm] = useState('');
+  // const [throttleTerm, setThrottleTerm] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const debounce = (func, delay) => {
-    let timeOutId;
-    return (...args) => {
-      clearTimeout(timeOutId);
-      timeOutId = setTimeout(() => {
-        func(...args);
-      }, delay);
-    }
-  }
+  // const debounce = (func, delay) => {
+  //   let timeOutId;
+  //   return (...args) => {
+  //     clearTimeout(timeOutId);
+  //     timeOutId = setTimeout(() => {
+  //       func(...args);
+  //     }, delay);
+  //   }
+  // }
 
-  const throttle = (func, delay) => {
-    let lastCall = 0;
-    return (...args) => {
-      const now = Date.now();
-      if (now - lastCall >= delay) {
-        func(...args);
-        lastCall = now;
-      }
-    }
-  }
+  // const throttle = (func, delay) => {
+  //   let lastCall = 0;
+  //   return (...args) => {
+  //     const now = Date.now();
+  //     if (now - lastCall >= delay) {
+  //       func(...args);
+  //       lastCall = now;
+  //     }
+  //   }
+  // }
 
-  const debounceSave = useCallback(debounce(nextValue => setDebounceTerm(nextValue), 5000), []);
-  const throttleSave = useCallback(throttle(nextValue => setThrottleTerm(nextValue), 5000), []);
+  // const debounceSave = useCallback(debounce(nextValue => setDebounceTerm(nextValue), 5000), []);
+  // const throttleSave = useCallback(throttle(nextValue => setThrottleTerm(nextValue), 5000), []);
 
   function handleSearchChange(e) {
     setSearchTerm(e.target.value);
     // throttle(setThrottleTerm, 5000)(e.target.value);
-    debounceSave(e.target.value);
-    throttleSave(e.target.value);
+    // debounceSave(e.target.value);
+    // throttleSave(e.target.value);
   }
 
-  const debouncedSearch = useDebounce(searchTerm, 5000, (term) => {
+  const debouncedSearch = useDebounce((term) => {
     console.log('Debounced search term:', term);
-  })
+  }, 2000, searchTerm);
 
-  // const throttleSearch = useThrottle(() => {
-  //   console.log('throttle search term:');
-  // }, 5000)
+  const handleSubmit = useThrottle(() => {
+    setIsSubmitting(true);
+    // console.log('Submitted Form With Search Term : ', debouncedSearch);
+    onSearch(debouncedSearch);
+
+    // simulate form submission logic here
+    setTimeout(() => {
+      setIsSubmitting(false);
+    }, 1000)
+  }, 2000);
 
   return (
     <>
@@ -115,10 +128,7 @@ function SearchBox({ onSearch }) {
               placeholder="Search Book" value={searchTerm} onChange={handleSearchChange} required />
             <div className="absolute right-0 top-0 flex h-full items-center">
               <button type="submit"
-                className="mr-1.5 flex items-center space-x-1.5 rounded-md rounded-e-lg bg-[#1C4336] px-4 py-2.5 text-sm text-white" onClick={(e) => {
-                  e.preventDefault();
-                  onSearch(debouncedSearch);
-                }}>
+                className="mr-1.5 flex items-center space-x-1.5 rounded-md rounded-e-lg bg-[#1C4336] px-4 py-2.5 text-sm text-white" disabled={isSubmitting} onClick={(e) => { e.preventDefault(); handleSubmit() }}>
                 <svg className="h-[14px] w-[14px]" aria-hidden="true"
                   xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
                   <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"
@@ -127,25 +137,27 @@ function SearchBox({ onSearch }) {
                 <span >Search</span>
               </button>
             </div>
-            <p>Debounce : {debounceTerm}</p>
-            <p>Throttle : {throttleTerm}</p>
+            {/* <p>Debounce : {debounceTerm}</p> */}
+            {/* <p>Throttle : {throttleTerm}</p> */}
           </div>
         </div>
-      </form>
+      </form >
     </>
   )
 }
 
-function Filter() {
+function Filter({ Books, onSelect }) {
+  console.log("🚀 ~ Filter ~ Books:", Books)
+
   return (
     <>
       <div className="flex items-stretch space-x-3">
         {/* <!-- Sort --> */}
         <select className="cursor-pointer rounded-md border px-4 py-2 text-center text-gray-600" name="sortBy"
-          id="sortBy">
+          id="sortBy" onChange={(e) => onSelect(e.target.value)}>
           <option value="">Sort</option>
-          <option value="name_asc">Name (A-Z)</option>
-          <option value="name_desc">Name (Z-A)</option>
+          <option value="name_asc" >Name (A-Z)</option>
+          <option value="name_desc" >Name (Z-A)</option>
           <option value="year_asc">Publication Year (Oldest)</option>
           <option value="year_desc">Publication Year (Newest)</option>
         </select>
@@ -159,15 +171,19 @@ const BookData = [
     'id': crypto.randomUUID(),
     'name': 'JavaScript and Jquery',
     'author': 'Jon Duckett',
+    'year': '2000',
     'price': '$62',
     'star': '4 Star',
-    'img': './assets/book.png'
+    'img': './assets/book.png',
+    'isFavorite': true,
   },
   {
     'id': crypto.randomUUID(),
     'name': 'React Js',
     'author': 'Brendon Eich',
     'price': '$72',
+    'isFavorite': false,
+    'year': '2001',
     'star': '4 Star',
     'img': './assets/book.png'
   },
@@ -176,6 +192,8 @@ const BookData = [
     'name': 'Think In a Javascript Way',
     'author': 'Sumit Da',
     'price': '$100',
+    'isFavorite': true,
+    'year': '2010',
     'star': '4 Star',
     'img': './assets/book.png'
   },
@@ -184,6 +202,8 @@ const BookData = [
     'name': 'Functions',
     'author': 'Tapas Da',
     'price': '$100',
+    'isFavorite': true,
+    'year': '2020',
     'star': '4 Star',
     'img': './assets/book.png'
   },
@@ -192,25 +212,74 @@ const BookData = [
     'name': 'Next Js',
     'author': 'Linus',
     'price': '$162',
+    'isFavorite': false,
+    'year': '2023',
     'star': '4 Star',
     'img': './assets/book.png'
   },
   {
     'id': crypto.randomUUID(),
     'name': 'Rust',
-    'author': 'kkp',
+    'author': 'KKP',
+    'isFavorite': false,
     'price': '$620',
+    'year': '2024',
     'star': '4 Star',
     'img': './assets/book.png'
   },
 ]
 
-function BookGrid() {
+function BookGrid({ Books, sortingParam }) {
+  console.log(Books);
+  console.log(sortingParam);
+
+  const [newBooks, setNewBooks] = useState(Books);
+
+  let sortedBooks = [];
+  if (sortingParam === 'name_asc') {
+    sortedBooks = Books.sort((a, b) => a.name.localeCompare(b.name));
+  } else if (sortingParam === 'name_desc') {
+    sortedBooks = Books.sort((a, b) => b.name.localeCompare(a.name));
+  } else if (sortingParam === "year_asc") {
+    sortedBooks = Books.sort(function (book1, book2) {
+      return book1.year - book2.year;
+    });
+  } else {
+    sortedBooks = Books.sort(function (book1, book2) {
+      return book2.year - book1.year;
+    });
+  }
+
+  Books = sortedBooks;
+
+  function handleFavorite(refId) {
+    console.log('clicked', refId);
+    const refBook = Books.filter(book => book.id === refId);
+    const filteredBooks = Books.filter(book => book.id !== refId);
+
+    console.log(refBook[0]);
+    console.log(refBook[0].isFavorite);
+    refBook[0].isFavorite = !refBook[0].isFavorite;
+    console.log(refBook[0].isFavorite);
+
+    // Books = [
+    //   ...filteredBooks,
+    //   refBook[0],
+    // ];
+    // console.log(Books);
+    setNewBooks([
+      ...filteredBooks,
+      refBook[0],
+    ]);
+
+    Books = newBooks;
+  }
+
   return (
     <>
       <div className="container mx-auto grid grid-cols-1 gap-8 max-w-7xl md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {/* <!-- Book Item --> */}
-        {BookData.map(book => (
+        {Books.map(book => (
           < div className="space-y-3" key={book.id} >
             {/* <!-- thumbnail --> */}
             <div className="flex items-center justify-center rounded-md border border-[#324251]/30 bg-white p-4" >
@@ -218,7 +287,7 @@ function BookGrid() {
             </div>
             {/* <!-- info --> */}
             <div className="space-y-3">
-              <h4 className="text-lg font-bold lg:text-xl">{book.name}</h4>
+              <h4 className="text-lg font-bold lg:text-xl">{book.name}({book.year})</h4>
               <p className="text-xs lg:text-sm">By : <span>{book.author}</span></p>
               <div className="flex items-center justify-between">
                 <h4 className="text-lg font-bold lg:text-xl">{book.price}</h4>
@@ -228,7 +297,7 @@ function BookGrid() {
                   <img src={star} />
                   <img src={star} />
                   <img src={star} />
-                  <span className="text-xs lg:text-sm">({book.img})</span>
+                  <span className="text-xs lg:text-sm">(4 star)</span>
                 </div>
                 {/* <!-- stars ends --> */}
               </div>
@@ -245,10 +314,14 @@ function BookGrid() {
                   Add to Cart
                 </button>
                 <button
-                  className="flex min-w-[132px] items-center justify-center gap-1 rounded-md bg-[#1C4336]/[14%] py-1.5 text-[#1C4336] transition-all hover:bg-[#1C4336]/[24%] lg:py-1.5">
+                  className="flex min-w-[132px] items-center justify-center gap-1 rounded-md
+                   bg-[#1C4336]/[14%] py-1.5 text-[#1C4336] transition-all hover:bg-[#1C4336]/[24%] lg:py-1.5" onClick={() => {
+                    // e.preventDefault();
+                    handleFavorite(book.id);
+                  }} >
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5"
                     stroke="currentColor" className="h-5 w-5">
-                    <path strokeLinecap="round" strokeLinejoin="round"
+                    <path strokeLinecap="round" strokeLinejoin="round" fill={book.isFavorite ? 'yellow' : 'none'}
                       d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
                   </svg>
                   Favourite
@@ -263,11 +336,22 @@ function BookGrid() {
   )
 }
 function Main() {
-  const BookInformation = BookData;
-  console.log(BookInformation);
+  let [filteredBooks, setFilteredBooks] = useState(BookData);
+  let [sortingParam, setSortingParam] = useState('');
 
   function handleSearch(text) {
     console.log('got searchText -> ', text);
+    const foundBooks = BookData.filter((book) => {
+      if (book.name.toLowerCase().includes(text.toLowerCase()) === true)
+        return book;
+    })
+    setFilteredBooks(foundBooks);
+    console.log(filteredBooks);
+  }
+
+  function handleSelect(text) {
+    console.log('Selected -> ', text);
+    setSortingParam(text);
   }
 
   return (
@@ -287,14 +371,15 @@ function Main() {
               <SearchBox onSearch={handleSearch} />
               {/* <!-- Search Box Ends --> */}
             </div>
+
             {/* <!-- sort - filter --> */}
-            <Filter />
+            <Filter Books={filteredBooks} onSelect={handleSelect} />
           </div>
         </header>
         {/* <!-- header ends --> */}
 
         {/* <!-- Book Grid --> */}
-        <BookGrid />
+        <BookGrid Books={filteredBooks} sortingParam={sortingParam} />
         {/* <!-- Book Grid Ends --> */}
       </main>
     </>
