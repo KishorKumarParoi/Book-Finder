@@ -41,7 +41,7 @@ export default function SearchBox({ onSearch }) {
     }
 
     const debouncedSearch = useDebounce((term) => {
-        console.log('Debounced search term:', term);
+        // console.log('Debounced search term:', term);
     }, 2000, searchTerm);
 
     const handleSubmit = useThrottle(() => {

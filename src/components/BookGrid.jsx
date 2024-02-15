@@ -3,8 +3,8 @@ import bookLink from '../assets/book.png';
 import star from '../assets/star.svg';
 
 export default function BookGrid({ Books, sortingParam }) {
-    console.log(Books);
-    console.log(sortingParam);
+    // console.log(Books);
+    // console.log(sortingParam);
 
     const [newBooks, setNewBooks] = useState(Books);
 
@@ -26,14 +26,14 @@ export default function BookGrid({ Books, sortingParam }) {
     Books = sortedBooks;
 
     function handleFavorite(refId) {
-        console.log('clicked', refId);
+        // console.log('clicked', refId);
         const refBook = Books.filter(book => book.id === refId);
         const filteredBooks = Books.filter(book => book.id !== refId);
 
-        console.log(refBook[0]);
-        console.log(refBook[0].isFavorite);
+        // console.log(refBook[0]);
+        // console.log(refBook[0].isFavorite);
         refBook[0].isFavorite = !refBook[0].isFavorite;
-        console.log(refBook[0].isFavorite);
+        // console.log(refBook[0].isFavorite);
 
         // Books = [
         //   ...filteredBooks,

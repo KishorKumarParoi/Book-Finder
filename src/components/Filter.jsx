@@ -1,5 +1,5 @@
 export default function Filter({ Books, onSelect }) {
-    console.log("🚀 ~ Filter ~ Books:", Books)
+    // console.log("🚀 ~ Filter ~ Books:", Books)
 
     return (
         <>

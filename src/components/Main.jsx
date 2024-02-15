@@ -9,17 +9,17 @@ export default function Main() {
     let [sortingParam, setSortingParam] = useState('');
 
     function handleSearch(text) {
-        console.log('got searchText -> ', text);
+        // console.log('got searchText -> ', text);
         const foundBooks = BookData.filter((book) => {
             if (book.name.toLowerCase().includes(text.toLowerCase()) === true)
                 return book;
         })
         setFilteredBooks(foundBooks);
-        console.log(filteredBooks);
+        // console.log(filteredBooks);
     }
 
     function handleSelect(text) {
-        console.log('Selected -> ', text);
+        // console.log('Selected -> ', text);
         setSortingParam(text);
     }
 
